@@ -20,7 +20,7 @@ pip install python-dateutil requests pandas chardet
 
 Clone the repository:
 ```bash
-git clone https://github.com/yourusername/osint-industries-canvas.git
+git clone https://github.com/unnohwn/osint-industries-canvas.git
 cd osint-industries-canvas
 ```
 
