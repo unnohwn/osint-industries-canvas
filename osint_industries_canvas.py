@@ -13,67 +13,32 @@ PLATFORM_SVG_ICONS = {
 }
 
 PLATFORM_EMOJI_ICONS = {
-    "Google": "🔍",
-    "Apple": "🍎",
-    "Garmin": "⌚",
-    "Samsung": "📱",
-    "Dropbox": "📦",
-    "Google Maps": "🗺️",
-    "Pinterest": "📌",
-    "Spotify": "🎧",
-    "EA": "🎮",
-    "Nvidia": "🖥️",
-    "Wix": "🌐",
-    "DeviantArt": "🎨",
-    "Dailymotion": "📺",
-    "Vimeo": "🎬",
-    "MySpace": "🎵",
-    "Discord": "💬",
-    "Reddit": "📱",
-    "TikTok": "📱",
-    "YouTube": "▶️",
-    "Twitch": "🎮",
-    "GitHub": "💻",
-    "Steam": "🎮",
-    "WhatsApp": "📱"
+    "Google": "🔍", "Apple": "🍎", "Garmin": "⌚", "Samsung": "📱", "Dropbox": "📦",
+    "Google Maps": "🗺️", "Pinterest": "📌", "Spotify": "🎧", "EA": "🎮", "Nvidia": "🖥️",
+    "Wix": "🌐", "DeviantArt": "🎨", "Dailymotion": "📺", "Vimeo": "🎬", "MySpace": "🎵",
+    "Discord": "💬", "Reddit": "📱", "TikTok": "📱", "YouTube": "▶️", "Twitch": "🎮",
+    "GitHub": "💻", "Steam": "🎮", "WhatsApp": "📱"
 }
-
 def is_valid_image_url(url):
-    """Check if URL is a valid image URL"""
     image_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
-    
     if any(url.lower().endswith(ext) for ext in image_extensions):
         return True
-        
     if any(domain in url.lower() for domain in ['googleusercontent.com', 'google.com']):
         return True
-        
-    image_patterns = [
-        r'avatars?\.', # Matches avatar URLs
-        r'profile.*\.', # Matches profile picture URLs
-        r'photos?\.', # Matches photo URLs
-        r'images?\.', # Matches image URLs
-        r'cdn\.', # Matches CDN URLs
-    ]
-    
+    image_patterns = [r'avatars?\.', r'profile.*\.', r'photos?\.', r'images?\.', r'cdn\.']
     return any(re.search(pattern, url.lower()) for pattern in image_patterns)
 
 def get_platform_icon(platform_name):
-    """Get the appropriate icon for the platform"""
     platform_lower = platform_name.lower()
-    
     if platform_lower in PLATFORM_SVG_ICONS:
         return f'<svg-icon>{PLATFORM_SVG_ICONS[platform_lower]}</svg-icon>'
-    
     return PLATFORM_EMOJI_ICONS.get(platform_name.capitalize(), "ℹ️")
 
 def get_platform_color(platform_name):
-    """Get color based on platform category"""
     social_media = ["Facebook", "Instagram", "Twitter", "LinkedIn", "Snapchat", "TikTok"]
     entertainment = ["Spotify", "YouTube", "Twitch", "Vimeo", "Dailymotion"]
     professional = ["GitHub", "LinkedIn", "Dropbox", "Google"]
     gaming = ["EA", "Steam", "PlayStation", "Xbox"]
-    
     if platform_name in social_media:
         return "1"
     elif platform_name in entertainment:
@@ -83,17 +48,15 @@ def get_platform_color(platform_name):
     elif platform_name in gaming:
         return "4"
     return "5"
+
+def count_valid_data_points(platform_data):
+    return sum(1 for k, v in platform_data.items() if v and v.strip() and k not in ['module', 'breach'])
+
 def create_canvas_card(platform_data, x_pos, y_pos):
-    """Create card for platform, even if only name is available"""
     platform_name = platform_data['module'].capitalize()
     icon = get_platform_icon(platform_name)
-    
-    data_points = {k: v for k, v in platform_data.items() 
-                  if v and v.strip() and k != 'module' and k != 'breach'}
-    
-    card_content = f"""# {icon} {platform_name}
-
->[!info]+ Profile Information"""
+    data_points = {k: v for k, v in platform_data.items() if v and v.strip() and k != 'module' and k != 'breach'}
+    card_content = f"""# {icon} {platform_name}\n\n>[!info]+ Profile Information"""
 
     if platform_data.get('picture_url') and platform_data['picture_url'].strip():
         pic_url = platform_data['picture_url']
@@ -102,9 +65,7 @@ def create_canvas_card(platform_data, x_pos, y_pos):
 
     if data_points:
         for key, value in sorted(data_points.items()):
-            if key == 'picture_url':
-                continue
-            if key == 'module':
+            if key in ['picture_url', 'module']:
                 continue
             display_key = key.replace('_', ' ').title()
             if key == 'bio':
@@ -145,19 +106,18 @@ def create_canvas_file(csv_data, output_filename):
         }
     }
     
+    sorted_platforms = sorted(csv_data, key=count_valid_data_points, reverse=True)
     x = 100
     y = 100
     max_cards_per_row = 3
     card_spacing_x = 350
     card_spacing_y = 300
-    
     card_count = 0
     
-    for platform in csv_data:
+    for platform in sorted_platforms:
         if platform['module'].strip():
             current_x = x + (card_count % max_cards_per_row) * card_spacing_x
             current_y = y + (card_count // max_cards_per_row) * card_spacing_y
-            
             card = create_canvas_card(platform, current_x, current_y)
             if card:
                 canvas["nodes"].append(card)
@@ -172,14 +132,12 @@ def main():
     else:
         import glob
         csv_files = glob.glob("*.csv")
-        
         if not csv_files:
             print("Error: No CSV file found!")
             print("Please either:")
             print("1. Provide CSV file as argument: python social_radar_canvas.py your_file.csv")
             print("2. Place a CSV file in the same directory as the script")
             sys.exit(1)
-        
         input_file = csv_files[0]
         print(f"Using CSV file: {input_file}")
 
@@ -188,10 +146,8 @@ def main():
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
             csv_data = list(csv.DictReader(f))
-        
         create_canvas_file(csv_data, output_file)
         print(f"Canvas file created successfully: {output_file}")
-        
     except Exception as e:
         print(f"Error processing file '{input_file}': {str(e)}")
         print("\nUsage:")
