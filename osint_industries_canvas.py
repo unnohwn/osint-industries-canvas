@@ -4,6 +4,29 @@ import datetime
 import sys
 import re
 
+def is_valid_image_url(url):
+    """Check if URL is a valid image URL or base64 data"""
+    if url.startswith('data:image'):
+        return True
+        
+    image_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+    
+    if any(url.lower().endswith(ext) for ext in image_extensions):
+        return True
+        
+    if any(domain in url.lower() for domain in ['googleusercontent.com', 'google.com']):
+        return True
+        
+    image_patterns = [
+        r'avatars?\.', # Matches avatar URLs
+        r'profile.*\.', # Matches profile picture URLs
+        r'photos?\.', # Matches photo URLs
+        r'images?\.', # Matches image URLs
+        r'cdn\.', # Matches CDN URLs
+    ]
+    
+    return any(re.search(pattern, url.lower()) for pattern in image_patterns)
+
 PLATFORM_SVG_ICONS = {
     "facebook": """<svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12.001 2.002c-5.522 0-9.999 4.477-9.999 9.999 0 4.99 3.656 9.126 8.437 9.879v-6.988h-2.54v-2.891h2.54V9.798c0-2.508 1.493-3.891 3.776-3.891 1.094 0 2.24.195 2.24.195v2.459h-1.264c-1.24 0-1.628.772-1.628 1.563v1.875h2.771l-.443 2.891h-2.328v6.988C18.344 21.129 22 16.992 22 12.001c0-5.522-4.477-9.999-9.999-9.999z"/></svg>""",
     "instagram": """<svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2.982c2.937 0 3.285.011 4.445.064 1.072.049 1.655.228 2.043.379.513.2.88.437 1.265.822.385.385.622.752.822 1.265.151.388.33.971.379 2.043.053 1.16.064 1.508.064 4.445s-.011 3.285-.064 4.445c-.049 1.072-.228 1.655-.379 2.043-.2.513-.437.88-.822 1.265-.385.385-.752.622-1.265.822-.388.151-.971.33-2.043.379-1.16.053-1.508.064-4.445.064s-3.285-.011-4.445-.064c-1.072-.049-1.655-.228-2.043-.379-.513-.2-.88-.437-1.265-.822-.385-.385-.622-.752-.822-1.265-.151-.388-.33-.971-.379-2.043-.053-1.16-.064-1.508-.064-4.445s.011-3.285.064-4.445c.049-1.072.228-1.655.379-2.043.2-.513.437-.88.822-1.265.385-.385.752-.622 1.265-.822.388-.151.971-.33 2.043-.379 1.16-.053 1.508-.064 4.445-.064M12 1c-2.987 0-3.362.013-4.535.066-1.171.054-1.97.24-2.67.512-.724.281-1.339.656-1.951 1.268-.612.612-.987 1.227-1.268 1.951-.272.7-.458 1.499-.512 2.67C1.013 8.638 1 9.013 1 12s.013 3.362.066 4.535c.054 1.171.24 1.97.512 2.67.281.724.656 1.339 1.268 1.951.612.612 1.227.987 1.951 1.268.7.272 1.499.458 2.67.512C8.638 22.987 9.013 23 12 23s3.362-.013 4.535-.066c1.171-.054 1.97-.24 2.67-.512.724-.281 1.339-.656 1.951-1.268.612-.612.987-1.227 1.268-1.951.272-.7.458-1.499.512-2.67C22.987 15.362 23 14.987 23 12s-.013-3.362-.066-4.535c-.054-1.171-.24-1.97-.512-2.67-.281-.724-.656-1.339-1.268-1.951-.612-.612-1.227-.987-1.951-1.268-.7-.272-1.499-.458-2.67-.512C15.362 1.013 14.987 1 12 1zm0 5.351c-3.121 0-5.649 2.528-5.649 5.649S8.879 17.649 12 17.649s5.649-2.528 5.649-5.649S15.121 6.351 12 6.351z"/></svg>""",
@@ -13,32 +36,30 @@ PLATFORM_SVG_ICONS = {
 }
 
 PLATFORM_EMOJI_ICONS = {
-    "Google": "🔍", "Apple": "🍎", "Garmin": "⌚", "Samsung": "📱", "Dropbox": "📦",
-    "Google Maps": "🗺️", "Pinterest": "📌", "Spotify": "🎧", "EA": "🎮", "Nvidia": "🖥️",
-    "Wix": "🌐", "DeviantArt": "🎨", "Dailymotion": "📺", "Vimeo": "🎬", "MySpace": "🎵",
-    "Discord": "💬", "Reddit": "📱", "TikTok": "📱", "YouTube": "▶️", "Twitch": "🎮",
+    "Google": "🔍", "Apple": "🍎", "Garmin": "⌚", "Samsung": "📱",
+    "Dropbox": "📦", "Google Maps": "🗺️", "Pinterest": "📌", "Spotify": "🎧",
+    "EA": "🎮", "Nvidia": "🖥️", "Wix": "🌐", "DeviantArt": "🎨",
+    "Dailymotion": "📺", "Vimeo": "🎬", "MySpace": "🎵", "Discord": "💬",
+    "Reddit": "📱", "TikTok": "📱", "YouTube": "▶️", "Twitch": "🎮",
     "GitHub": "💻", "Steam": "🎮", "WhatsApp": "📱"
 }
-def is_valid_image_url(url):
-    image_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
-    if any(url.lower().endswith(ext) for ext in image_extensions):
-        return True
-    if any(domain in url.lower() for domain in ['googleusercontent.com', 'google.com']):
-        return True
-    image_patterns = [r'avatars?\.', r'profile.*\.', r'photos?\.', r'images?\.', r'cdn\.']
-    return any(re.search(pattern, url.lower()) for pattern in image_patterns)
 
 def get_platform_icon(platform_name):
+    """Get the appropriate icon for the platform"""
     platform_lower = platform_name.lower()
+    
     if platform_lower in PLATFORM_SVG_ICONS:
         return f'<svg-icon>{PLATFORM_SVG_ICONS[platform_lower]}</svg-icon>'
+    
     return PLATFORM_EMOJI_ICONS.get(platform_name.capitalize(), "ℹ️")
 
 def get_platform_color(platform_name):
+    """Get color based on platform category"""
     social_media = ["Facebook", "Instagram", "Twitter", "LinkedIn", "Snapchat", "TikTok"]
     entertainment = ["Spotify", "YouTube", "Twitch", "Vimeo", "Dailymotion"]
     professional = ["GitHub", "LinkedIn", "Dropbox", "Google"]
     gaming = ["EA", "Steam", "PlayStation", "Xbox"]
+    
     if platform_name in social_media:
         return "1"
     elif platform_name in entertainment:
@@ -49,35 +70,80 @@ def get_platform_color(platform_name):
         return "4"
     return "5"
 
-def count_valid_data_points(platform_data):
-    return sum(1 for k, v in platform_data.items() if v and v.strip() and k not in ['module', 'breach'])
+def clean_base64_image(base64_string):
+    """Clean and format base64 string"""
+    if 'base64,' in base64_string:
+        base64_string = base64_string.split('base64,')[1]
+    
+    base64_string = base64_string.strip()
+    
+    return f'data:image/jpeg;base64,{base64_string}'
+
+def embed_image_in_markdown(image_url):
+    """Create properly embedded image in Markdown"""
+    if 'base64' in image_url:
+        cleaned_url = clean_base64_image(image_url)
+        return f'<img src="{cleaned_url}" alt="Profile Picture" style="max-width:200px;" />'
+    else:
+        return f'<img src="{image_url}" alt="Profile Picture" style="max-width:200px;" />'
+
+def format_value(key, value):
+    """Format values for better display"""
+    if isinstance(value, str):
+        if any(date_indicator in key.lower() for date_indicator in ['date', 'seen', 'time']):
+            if '+' in value:
+                value = value.split('+')[0]
+            if 'T' in value:
+                date_part, time_part = value.split('T')
+                if '.' in time_part:
+                    time_part = time_part.split('.')[0]
+                value = f"{date_part} {time_part}"
+    return value
 
 def create_canvas_card(platform_data, x_pos, y_pos):
+    """Create card for platform, even if only name is available"""
     platform_name = platform_data['module'].capitalize()
     icon = get_platform_icon(platform_name)
-    data_points = {k: v for k, v in platform_data.items() if v and v.strip() and k != 'module' and k != 'breach'}
-    card_content = f"""# {icon} {platform_name}\n\n>[!info]+ Profile Information"""
+    
+    data_points = {k: v for k, v in platform_data.items() 
+                  if v and v.strip() and k != 'module' and k != 'breach'}
+    
+    card_content = f"""# {icon} {platform_name}
+
+>[!info]+ Profile Information"""
 
     if platform_data.get('picture_url') and platform_data['picture_url'].strip():
         pic_url = platform_data['picture_url']
         if is_valid_image_url(pic_url):
-            card_content += f"\n\n![]({pic_url})"
+            card_content += f"\n\n{embed_image_in_markdown(pic_url)}\n"
 
     if data_points:
+        priority_keys = ['name', 'username', 'email', 'creation_date', 'id', 'last_seen']
+        processed_keys = set()
+
+        for key in priority_keys:
+            if key in data_points:
+                display_key = key.replace('_', ' ').title()
+                value = format_value(key, data_points[key])
+                card_content += f"\n• {display_key}: {value}"
+                processed_keys.add(key)
+
         for key, value in sorted(data_points.items()):
-            if key in ['picture_url', 'module']:
+            if key in ['picture_url', 'module'] or key in processed_keys:
                 continue
             display_key = key.replace('_', ' ').title()
+            formatted_value = format_value(key, value)
             if key == 'bio':
-                value = value[:100] + "..." if len(value) > 100 else value
-            card_content += f"\n• {display_key}: {value}"
+                formatted_value = formatted_value[:100] + "..." if len(formatted_value) > 100 else formatted_value
+            card_content += f"\n• {display_key}: {formatted_value}"
     else:
         card_content += "\n• Status: Account Found"
 
     if platform_data.get('breach') == 'true':
         card_content += "\n\n>[!danger]+ Breach Detected"
         if platform_data.get('creation_date'):
-            card_content += f"\n• Date: {platform_data['creation_date']}"
+            breach_date = format_value('creation_date', platform_data['creation_date'])
+            card_content += f"\n• Date: {breach_date}"
 
     return {
         "id": f"card-{platform_name.lower().replace(' ', '-')}",
@@ -94,6 +160,7 @@ def create_canvas_card(platform_data, x_pos, y_pos):
     }
 
 def create_canvas_file(csv_data, output_filename):
+    """Create the canvas file with all platform cards"""
     canvas = {
         "nodes": [],
         "edges": [],
@@ -106,18 +173,19 @@ def create_canvas_file(csv_data, output_filename):
         }
     }
     
-    sorted_platforms = sorted(csv_data, key=count_valid_data_points, reverse=True)
     x = 100
     y = 100
     max_cards_per_row = 3
     card_spacing_x = 350
     card_spacing_y = 300
+    
     card_count = 0
     
-    for platform in sorted_platforms:
+    for platform in csv_data:
         if platform['module'].strip():
             current_x = x + (card_count % max_cards_per_row) * card_spacing_x
             current_y = y + (card_count // max_cards_per_row) * card_spacing_y
+            
             card = create_canvas_card(platform, current_x, current_y)
             if card:
                 canvas["nodes"].append(card)
@@ -127,17 +195,20 @@ def create_canvas_file(csv_data, output_filename):
         json.dump(canvas, f, indent=2, ensure_ascii=False)
 
 def main():
+    """Main function to handle script execution"""
     if len(sys.argv) > 1:
         input_file = sys.argv[1]
     else:
         import glob
         csv_files = glob.glob("*.csv")
+        
         if not csv_files:
             print("Error: No CSV file found!")
             print("Please either:")
-            print("1. Provide CSV file as argument: python social_radar_canvas.py your_file.csv")
+            print("1. Provide CSV file as argument: python osint_industries_canvas.py your_file.csv")
             print("2. Place a CSV file in the same directory as the script")
             sys.exit(1)
+        
         input_file = csv_files[0]
         print(f"Using CSV file: {input_file}")
 
@@ -146,12 +217,14 @@ def main():
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
             csv_data = list(csv.DictReader(f))
+        
         create_canvas_file(csv_data, output_file)
         print(f"Canvas file created successfully: {output_file}")
+        
     except Exception as e:
         print(f"Error processing file '{input_file}': {str(e)}")
         print("\nUsage:")
-        print("1. Provide CSV file as argument: python social_radar_canvas.py your_file.csv")
+        print("1. Provide CSV file as argument: python osint_industries_canvas.py your_file.csv")
         print("2. Place a CSV file in the same directory as the script")
         raise
 
