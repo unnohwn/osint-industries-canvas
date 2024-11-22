@@ -57,7 +57,7 @@ All platforms available on OSINT.Industries, including:
 
 ## Screenshot
 
-![Screenshot](example-screenshot.png)
+![Screenshot](screenshot.png)
 
 
 ## Note
